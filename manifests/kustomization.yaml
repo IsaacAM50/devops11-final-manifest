@@ -3,4 +3,6 @@ resources:
   - app/app-svc.yaml
   - redis/redis-deployment.yaml
   - redis/redis-svc.yaml
+  - elastic/elastic-deployment.yaml
+  - elastic/elastic-svc.yaml
   - namespace.yaml
