@@ -6,7 +6,8 @@ metadata:
 spec:
   selector:
     app: elasticsearch
+  clusterIP: None
   ports:
-  - port: 9200
-    targetPort: 9200
-  type: ClusterIP
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200
