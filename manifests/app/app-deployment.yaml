@@ -21,7 +21,7 @@ spec:
             - containerPort: 5000
           env:
             - name: ELASTICSEARCH_HOST
-              value: elasticsearch
+              value: elasticsearch.flask.svc.cluster.local
             - name: ELASTICSEARCH_PORT
               value: "9200"
           resources:
