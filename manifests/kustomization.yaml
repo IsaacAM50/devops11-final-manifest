@@ -1,0 +1,6 @@
+resources:
+  - app/app-deployment.yaml
+  - app/app-svc.yaml
+  - redis/redis-deployment.yaml
+  - redis/redis-svc.yaml
+  - namespace.yaml
