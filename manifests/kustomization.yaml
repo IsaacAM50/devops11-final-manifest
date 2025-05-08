@@ -5,7 +5,4 @@ resources:
   - redis/redis-svc.yaml
   - elastic/elastic-deployment.yaml
   - elastic/elastic-svc.yaml
-  - monitorizacion/pods-monitoring.yaml
-  - monitorizacion/svc-metricas.yaml
   - namespace.yaml
-  

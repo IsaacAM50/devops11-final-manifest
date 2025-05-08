@@ -12,28 +12,18 @@ spec:
     metadata:
       labels:
         app: flask
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9090"
-        prometheus.io/path: "/metrics"
     spec:
       containers:
-       
         - name: flask
           image: ghcr.io/juarru/devops11a-project-app:main
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
-              name: http
           env:
             - name: ELASTICSEARCH_HOST
               value: elasticsearch.flask.svc.cluster.local
             - name: ELASTICSEARCH_PORT
               value: "9200"
-            - name: REDIS_HOST
-              value: redis.flask.svc.cluster.local
-            - name: REDIS_PORT
-              value: "6379"
           resources:
             limits:
               memory: "512Mi"
@@ -41,99 +31,3 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "250m"
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          # Montar el volumen compartido para logs
-          volumeMounts:
-            - name: flask-logs
-              mountPath: /app/logs
-            
-        # Contenedor sidecar para exponer métricas
-        - name: metrics-exporter
-          image: prom/prometheus:latest
-          args:
-            - "--config.file=/etc/prometheus/prometheus.yml"
-            - "--storage.tsdb.path=/prometheus"
-            - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-            - "--web.console.templates=/usr/share/prometheus/consoles"
-            - "--web.listen-address=:9090"
-          ports:
-            - containerPort: 9090
-              name: metrics
-          volumeMounts:
-            - name: prometheus-config
-              mountPath: /etc/prometheus
-            - name: prometheus-storage
-              mountPath: /prometheus
-          resources:
-            limits:
-              memory: "256Mi"
-              cpu: "100m"
-            requests:
-              memory: "128Mi"
-              cpu: "50m"
-              
-      volumes:
-        - name: flask-logs
-          emptyDir: {}
-        - name: prometheus-config
-          configMap:
-            name: prometheus-exporter-config
-        - name: prometheus-storage
-          emptyDir: {}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-exporter-config
-  namespace: flask
-data:
-  prometheus.yml: |
-    global:
-      scrape_interval: 15s
-    
-    scrape_configs:
-      - job_name: 'flask_metrics'
-        static_configs:
-          - targets: ['localhost:9091']
-      
-      # Esto configura un exportador de archivo de texto que imitará las métricas de tu aplicación
-      - job_name: 'flask_app_metrics'
-        file_sd_configs:
-          - files:
-            - '/etc/prometheus/targets.json'
-            refresh_interval: 5m
-        metric_relabel_configs:
-          - source_labels: [__name__]
-            regex: '(server_requests_total|healthcheck_requests_total|main_requests_total|logs_requests_total).*'
-            action: keep
-  
-  targets.json: |
-    [
-      {
-        "labels": {
-          "job": "flask_app_prometheus_metrics",
-          "instance": "flask:5000"
-        },
-        "targets": ["localhost:9091"]
-      }
-    ]
-
-  metrics.prom: |
-    # Métricas "simuladas" que representan las métricas de tu código
-    # Estas se actualizarán periódicamente mediante el script
-    server_requests_total 0
-    healthcheck_requests_total 0
-    main_requests_total 0
-    logs_requests_total 0
----
