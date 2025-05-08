@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: flask
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "5000"
     spec:
       containers:
         - name: flask
@@ -19,11 +23,16 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
+              name: http
+            - containerPort: 5000
+              name: metrics
           env:
             - name: ELASTICSEARCH_HOST
               value: elasticsearch.flask.svc.cluster.local
             - name: ELASTICSEARCH_PORT
               value: "9200"
+            - name: ENABLE_METRICS
+              value: "true"
           resources:
             limits:
               memory: "512Mi"
@@ -31,3 +40,15 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5

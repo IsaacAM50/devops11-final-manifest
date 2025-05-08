@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: elasticsearch
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9114"
     spec:
       initContainers:
         - name: fix-permissions
@@ -28,6 +32,7 @@ spec:
           image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
           ports:
             - containerPort: 9200
+              name: http
           env:
             - name: discovery.type
               value: single-node
@@ -47,6 +52,33 @@ spec:
             requests:
               memory: "512Mi"
               cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+        - name: elasticsearch-exporter
+          image: justwatch/elasticsearch_exporter:latest
+          ports:
+            - containerPort: 9114
+              name: metrics
+          env:
+            - name: ES_URI
+              value: "http://localhost:9200"
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
   volumeClaimTemplates:
     - metadata:
         name: elasticsearch-data

@@ -1,0 +1,40 @@
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: monitorizacion-flask
+  namespace: flask
+spec:
+  selector:
+    matchLabels:
+      app: flask
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: monitorizacion-redis
+  namespace: flask
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  endpoints:
+  - port: metrics
+    interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: monitorizacion-elasticsearch
+  namespace: flask
+spec:
+  selector:
+    matchLabels:
+      app: elasticsearch
+  endpoints:
+  - port: metrics
+    interval: 30s
