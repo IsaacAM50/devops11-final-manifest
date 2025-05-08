@@ -13,4 +13,4 @@ data:
     scrape_configs:
       - job_name: 'flask-app'
         static_configs:
-          - targets: ['flask-app.flask.svc.cluster.local:5000']
+          - targets: ['flask-service.flask.svc.cluster.local']
