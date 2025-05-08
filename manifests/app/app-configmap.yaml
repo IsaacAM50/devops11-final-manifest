@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-extractor-config
+  namespace: flask
+data:
+  extract-metrics.sh: |
+    #!/bin/bash
+    
+    # Script para extraer métricas de los logs y exponerlas a Prometheus
+    
+    # Archivo de métricas
+    METRICS_FILE="/tmp/metrics.prom"
+    
+    # Inicializar contadores
+    SERVER_REQUESTS=0
+    HEALTHCHECK_REQUESTS=0
+    MAIN_REQUESTS=0
+    LOGS_REQUESTS=0
+    
+    # Función para actualizar el archivo de métricas
+    update_metrics_file() {
+      cat > $METRICS_FILE << EOF
+    # HELP server_requests_total Total number of requests to this webserver
+    # TYPE server_requests_total counter
+    server_requests_total $SERVER_REQUESTS
+    
+    # HELP healthcheck_requests_total Total number of requests to healthcheck
+    # TYPE healthcheck_requests_total counter
+    healthcheck_requests_total $HEALTHCHECK_REQUESTS
+    
+    # HELP main_requests_total Total number of requests to main endpoint
+    # TYPE main_requests_total counter
+    main_requests_total $MAIN_REQUESTS
+    
+    # HELP logs_requests_total Total number of requests to logs endpoint
+    # TYPE logs_requests_total counter
+    logs_requests_total $LOGS_REQUESTS
+    EOF
+    }
+    
+    # Crear el archivo de métricas inicial
+    update_metrics_file
+    
+    # Iniciar el servidor de métricas básico
+    echo "Iniciando servidor de métricas en puerto 9091..."
+    cd /tmp
+    python3 -m http.server 9091 &
+    METRICS_SERVER_PID=$!
+    
+    # Función para limpiar antes de salir
+    cleanup() {
+      echo "Terminando servidor de métricas..."
+      kill $METRICS_SERVER_PID
+      exit 0
+    }
+    
+    # Capturar señales para salida limpia
+    trap cleanup SIGTERM SIGINT
+    
+    echo "Comenzando monitoreo de logs de Flask..."
+    
+    # Procesar logs y actualizar métricas continuamente
+    while true; do
+      # Verificar logs de acceso al servidor
+      NEW_SERVER_REQUESTS=$(kubectl logs -n flask -l app=flask -c flask --tail=100 | grep -c "REQUESTS.inc()")
+      if [ $NEW_SERVER_REQUESTS -gt 0 ]; then
+        SERVER_REQUESTS=$((SERVER_REQUESTS + NEW_SERVER_REQUESTS))
+      fi
+      
+      # Verificar logs de acceso al endpoint health
+      NEW_HEALTHCHECK_REQUESTS=$(kubectl logs -n flask -l app=flask -c flask --tail=100 | grep -c "HEALTHCHECK_REQUESTS.inc()")
+      if [ $NEW_HEALTHCHECK_REQUESTS -gt 0 ]; then
+        HEALTHCHECK_REQUESTS=$((HEALTHCHECK_REQUESTS + NEW_HEALTHCHECK_REQUESTS))
+      fi
+      
+      # Verificar logs de acceso al endpoint principal
+      NEW_MAIN_REQUESTS=$(kubectl logs -n flask -l app=flask -c flask --tail=100 | grep -c "MAIN_ENDPOINT_REQUESTS.inc()")
+      if [ $NEW_MAIN_REQUESTS -gt 0 ]; then
+        MAIN_REQUESTS=$((MAIN_REQUESTS + NEW_MAIN_REQUESTS))
+      fi
+      
+      # Verificar logs de acceso al endpoint logs
+      NEW_LOGS_REQUESTS=$(kubectl logs -n flask -l app=flask -c flask --tail=100 | grep -c "LOGS_ENDPOINT_REQUESTS.inc()")
+      if [ $NEW_LOGS_REQUESTS -gt 0 ]; then
+        LOGS_REQUESTS=$((LOGS_REQUESTS + NEW_LOGS_REQUESTS))
+      fi
+      
+      # Actualizar el archivo de métricas
+      update_metrics_file
+      
+      # Dormir antes de la siguiente actualización
+      sleep 15
+    done
