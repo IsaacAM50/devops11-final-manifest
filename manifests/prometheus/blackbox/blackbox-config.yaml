@@ -21,5 +21,3 @@ data:
           valid_status_codes: [200]
           method: GET
           preferred_ip_protocol: "ip4"
-          fail_if_not_matches_regexp:
-            - ".*"  # Solo verifica que haya contenido, no necesariamente JSON válido
