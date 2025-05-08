@@ -5,4 +5,7 @@ resources:
   - redis/redis-svc.yaml
   - elastic/elastic-deployment.yaml
   - elastic/elastic-svc.yaml
+  - prometheus/prometheus-deployment.yaml
+  - prometheus/prometheus-svc.yaml
+  - prometheus/prometheus-configmap.yaml
   - namespace.yaml
