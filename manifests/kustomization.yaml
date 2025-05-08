@@ -11,4 +11,10 @@ resources:
   - prometheus/blackbox/blackbox-deployment.yaml
   - prometheus/blackbox/blackbox-service.yaml
   - prometheus/blackbox/blackbox-config.yaml 
+  - grafana/grafana-deployment.yaml
+  - grafana/grafana-service.yaml
+  - grafana/grafana-configmap.yaml
+  - grafana/grafana-dashboard-provisioning-config.yaml
+  - grafana/grafana-dashboard.yaml 
+  - grafana/grafana-lb-service.yaml
   - namespace.yaml
