@@ -9,27 +9,66 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 15s
+      evaluation_interval: 15s
 
     scrape_configs:
-      # Monitorear el servicio principal de Flask
-      - job_name: 'flask-main'
-        metrics_path: /
-        static_configs:
-          - targets: ['flask-service.flask.svc.cluster.local']
-      
-      # Monitorear el endpoint /health
-      - job_name: 'flask-health'
-        metrics_path: /health
-        static_configs:
-          - targets: ['flask-service.flask.svc.cluster.local']
-      
-      # Monitorear el endpoint /logs
-      - job_name: 'flask-logs'
-        metrics_path: /logs
-        static_configs:
-          - targets: ['flask-service.flask.svc.cluster.local']
-      
-      # Monitorear Prometheus mismo
+      # Monitorear el propio Prometheus
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
+      
+      # Monitorear la disponibilidad del endpoint /health usando Blackbox Exporter
+      - job_name: 'flask-health-endpoint'
+        metrics_path: /probe
+        params:
+          module: [http_json]  # Usar el módulo http_json para endpoints JSON
+          target: ['http://flask-service.flask.svc.cluster.local:80/health']
+        static_configs:
+          - targets:
+            - blackbox-exporter.flask.svc.cluster.local:9115
+        relabel_configs:
+          - source_labels: [__param_target]
+            target_label: instance
+          - source_labels: [__param_target]
+            target_label: __param_target
+          - target_label: __address__
+            replacement: blackbox-exporter.flask.svc.cluster.local:9115
+      
+      # Monitorear la disponibilidad del endpoint /logs usando Blackbox Exporter
+      - job_name: 'flask-logs-endpoint'
+        metrics_path: /probe
+        params:
+          module: [http_json]  # Usar el módulo http_json para endpoints JSON
+          target: ['http://flask-service.flask.svc.cluster.local:80/logs']
+        static_configs:
+          - targets:
+            - blackbox-exporter.flask.svc.cluster.local:9115
+        relabel_configs:
+          - source_labels: [__param_target]
+            target_label: instance
+          - source_labels: [__param_target]
+            target_label: __param_target
+          - target_label: __address__
+            replacement: blackbox-exporter.flask.svc.cluster.local:9115
+      
+      # Monitorear el endpoint principal usando Blackbox Exporter
+      - job_name: 'flask-main-endpoint'
+        metrics_path: /probe
+        params:
+          module: [http_2xx]  # Usar el módulo http_2xx para endpoints normales
+          target: ['http://flask-service.flask.svc.cluster.local:80/']
+        static_configs:
+          - targets:
+            - blackbox-exporter.flask.svc.cluster.local:9115
+        relabel_configs:
+          - source_labels: [__param_target]
+            target_label: instance
+          - source_labels: [__param_target]
+            target_label: __param_target
+          - target_label: __address__
+            replacement: blackbox-exporter.flask.svc.cluster.local:9115
+      
+      # Monitorear el Blackbox Exporter mismo
+      - job_name: 'blackbox-exporter'
+        static_configs:
+          - targets: ['blackbox-exporter.flask.svc.cluster.local:9115']
