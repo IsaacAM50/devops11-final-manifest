@@ -8,4 +8,7 @@ resources:
   - prometheus/prometheus-deployment.yaml
   - prometheus/prometheus-svc.yaml
   - prometheus/prometheus-configmap.yaml
+  - prometheus/blackbox/blackbox-deployment.yaml
+  - prometheus/blackbox/blackbox-service.yaml
+  - prometheus/blackbox/blackbox-config.yaml 
   - namespace.yaml
