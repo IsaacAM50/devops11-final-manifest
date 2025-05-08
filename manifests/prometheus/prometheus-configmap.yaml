@@ -11,6 +11,25 @@ data:
       scrape_interval: 15s
 
     scrape_configs:
-      - job_name: 'flask-app'
+      # Monitorear el servicio principal de Flask
+      - job_name: 'flask-main'
+        metrics_path: /
         static_configs:
           - targets: ['flask-service.flask.svc.cluster.local']
+      
+      # Monitorear el endpoint /health
+      - job_name: 'flask-health'
+        metrics_path: /health
+        static_configs:
+          - targets: ['flask-service.flask.svc.cluster.local']
+      
+      # Monitorear el endpoint /logs
+      - job_name: 'flask-logs'
+        metrics_path: /logs
+        static_configs:
+          - targets: ['flask-service.flask.svc.cluster.local']
+      
+      # Monitorear Prometheus mismo
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
